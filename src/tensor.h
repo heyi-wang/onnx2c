@@ -76,7 +76,8 @@ class Tensor {
 	    std::string alternate_name = "",
 	    bool is_callsite = false,
 	    bool as_const = false,
-	    bool is_definition = false) const;
+	    bool is_definition = false,
+	    bool force_non_const = false) const;
 	std::string print_tensor_callsite(void) const
 	{
 		return print_tensor("", true, false);
@@ -85,9 +86,9 @@ class Tensor {
 	{
 		return print_tensor(alternate_name, false, true);
 	}
-	std::string print_tensor_definition(std::string alternate_name = "") const
+	std::string print_tensor_definition(std::string alternate_name = "", bool force_non_const = false) const
 	{
-		return print_tensor(alternate_name, false, false, true);
+		return print_tensor(alternate_name, false, false, true, force_non_const);
 	}
 
 	/* Print a tensor's initialization to output stream.

@@ -24,6 +24,7 @@ class Graph {
 	void print_file_frontmatter(std::ostream& destination);
 	void print_global_tensors(std::ostream& destination);
 	void print_tensor(const Tensor*, std::ostream& dst);
+	void print_load_weights_function(std::ostream& dst);
 	void print_functions(std::ostream& destination);
 	void print_includes(std::ostream& dst);
 	void print_interface_function(std::ostream& dst, bool print_definition = true);
@@ -45,6 +46,7 @@ class Graph {
 	void set_no_globals(bool ng) { no_globals = ng; }
 
 	void addInitializedTensor(onnx::TensorProto& tensor);
+	void write_weight_binaries(const std::string& dir);
 	Tensor* getIoTensor(onnx::ValueInfoProto& vi);
 
 	void replaceWithQuantized(std::vector<Tensor*>& inputs);

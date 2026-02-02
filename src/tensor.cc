@@ -496,11 +496,12 @@ std::string Tensor::print_tensor(
     std::string alternate_name,
     bool is_callsite,
     bool as_const,
-    bool is_definition) const
+    bool is_definition,
+    bool force_non_const) const
 {
 	std::string rv = "";
 	if (is_callsite == false) {
-		bool print_const = as_const || isConst;
+		bool print_const = !force_non_const && (as_const || isConst);
 		if (print_const)
 			rv += "const ";
 		rv += data_type_str() + " ";

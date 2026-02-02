@@ -6,6 +6,7 @@
 #include "options.h"
 
 #include "aixlog.hpp"
+#include <fstream>
 #include <iostream>
 
 using namespace toC;
@@ -127,6 +128,23 @@ void Graph::addInitializedTensor(onnx::TensorProto& tensor)
 	t->isConst = true;
 
 	addTensor(t);
+}
+
+void Graph::write_weight_binaries(const std::string& dir)
+{
+	std::string path = dir + "/weights.bin";
+	std::ofstream ofs(path, std::ios::binary);
+	if (!ofs.good()) {
+		LOG(ERROR) << "Cannot write weight file: " << path << std::endl;
+		return;
+	}
+	for (auto t : tensors) {
+		if (t->union_no >= 0 || !t->generate || !t->initialize || !t->data_buffer)
+			continue;
+		size_t nbytes = (size_t)t->data_num_elem() * (size_t)t->data_elem_size();
+		ofs.write(static_cast<const char*>(t->data_buffer), (std::streamsize)nbytes);
+		LOG(DEBUG) << "Appended " << t->cname() << " to " << path << " (" << nbytes << " bytes)" << std::endl;
+	}
 }
 
 Tensor* Graph::getIoTensor(onnx::ValueInfoProto& vi)

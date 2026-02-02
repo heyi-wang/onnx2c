@@ -17,6 +17,9 @@ struct onnx2c_opts {
 	bool only_init = false;
 	bool opt_unionize = true;
 	bool opt_fold_casts = true;
+	/* Emit only model structure; store weights in separate binary files loaded at runtime */
+	bool external_weights = false;
+	std::string weights_dir = "."; /* Directory where .bin weight files are written */
 /*
  * logging levels are
  * cmd line     aixlog     Use

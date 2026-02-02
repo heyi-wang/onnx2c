@@ -127,6 +127,8 @@ void parse_cmdline_options(int argc, const char* argv[])
 	args::ValueFlagList<std::string> define(parser, "dim:size", "Define graph input dimension. Can be given multiple times", {'d', "define"});
 	args::ValueFlag<int> loglevel(parser, "level", "Logging verbosity. 0(none)-4(all)", {'l', "log"});
 	args::ValueFlag<std::string> optimizations(parser, "opt[,opt]...", "Specify optimization passes to run. ('help' to list available)", {'p', "optimizations"});
+	args::Flag externalWeights(parser, "external-weights", "Store weights in separate binary files; generate load_weights() for runtime loading", {'w', "external-weights"});
+	args::ValueFlag<std::string> weightsDir(parser, "dir", "Directory for weight .bin files (default: .)", {"weights-dir"});
 	args::Flag help(parser, "help", "Print this help text.", {'h', "help"});
 	args::Flag version(parser, "version", "Print onnx2c version", {'v', "version"});
 	args::Positional<std::string> input(parser, "input", "ONNX file to process");
@@ -180,6 +182,12 @@ void parse_cmdline_options(int argc, const char* argv[])
 	}
 	if (optimizations) {
 		store_optimization_passes(args::get(optimizations));
+	}
+	if (externalWeights) {
+		options.external_weights = true;
+	}
+	if (weightsDir) {
+		options.weights_dir = args::get(weightsDir);
 	}
 	if (input) {
 		options.input_file = args::get(input);

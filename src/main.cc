@@ -40,5 +40,7 @@ int main(int argc, const char* argv[])
 	}
 	else {
 		toCgraph.print_source(std::cout);
+		if (options.external_weights)
+			toCgraph.write_weight_binaries(options.weights_dir);
 	}
 }

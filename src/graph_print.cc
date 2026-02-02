@@ -23,6 +23,8 @@ void Graph::print_source(std::ostream& dst)
 	print_includes(dst);
 	dst << std::endl;
 	print_global_tensors(dst);
+	if (options.external_weights)
+		print_load_weights_function(dst);
 	dst << std::endl;
 	print_functions(dst);
 	dst << std::endl;
@@ -96,7 +98,7 @@ void Graph::print_tensor(const Tensor* t, std::ostream& dst)
 	}
 
 	if (t->union_no < 0) {
-		if (options.extern_init && t->initialize) {
+		if (options.extern_init && t->initialize && !options.external_weights) {
 			dst << "extern ";
 		}
 		else if (!options.only_init) {
@@ -104,14 +106,18 @@ void Graph::print_tensor(const Tensor* t, std::ostream& dst)
 		}
 	}
 
-	dst << t->print_tensor_definition();
+	/* When external_weights: initialized tensors are declared without const and without initializer */
+	bool weight_from_file = options.external_weights && t->initialize;
+	dst << t->print_tensor_definition("", weight_from_file);
 	if (t->initialize) {
-		if (options.target_avr && t->isConst)
-			dst << " PROGMEM";
+		if (!options.external_weights) {
+			if (options.target_avr && t->isConst)
+				dst << " PROGMEM";
 
-		if (!options.extern_init) {
-			dst << " = " << std::endl;
-			t->print_tensor_initializer(dst);
+			if (!options.extern_init) {
+				dst << " = " << std::endl;
+				t->print_tensor_initializer(dst);
+			}
 		}
 	}
 	dst << ";" << std::endl;
@@ -141,6 +147,29 @@ void Graph::print_global_tensors(std::ostream& dst)
 		}
 	}
 	LOG(TRACE) << "(done printing global tensors)" << std::endl;
+}
+
+void Graph::print_load_weights_function(std::ostream& dst)
+{
+	dst << "/* Load all weight tensors from a single binary file dir/weights.bin. Call once at startup (or before entry()). */" << std::endl;
+	dst << "void load_weights(const char *dir)" << std::endl;
+	dst << "{" << std::endl;
+	dst << "\tchar path[512];" << std::endl;
+	dst << "\tFILE *f;" << std::endl;
+	dst << "\tsnprintf(path, sizeof(path), \"%s/weights.bin\", dir);" << std::endl;
+	dst << "\tf = fopen(path, \"rb\");" << std::endl;
+	dst << "\tif (!f) return;" << std::endl;
+
+	for (auto t : tensors) {
+		if (t->union_no >= 0 || !t->generate || !t->initialize)
+			continue;
+		dst << "\t(void)fread(&" << t->cname() << ", sizeof(" << t->data_type_str() << "), "
+		    << t->data_num_elem() << "UL, f);" << std::endl;
+	}
+
+	dst << "\tfclose(f);" << std::endl;
+	dst << "}" << std::endl;
+	dst << std::endl;
 }
 
 void Graph::print_functions(std::ostream& dst)
@@ -173,8 +202,10 @@ void Graph::print_includes(std::ostream& dst)
 	dst << "#include <math.h>" << std::endl;
 	dst << "#include <stdbool.h>" << std::endl;
 	dst << "#include <stdint.h>" << std::endl;
-	dst << "#include <string.h>" << std::endl;
 	dst << "#include <stdlib.h>" << std::endl;
+	dst << "#include <string.h>" << std::endl;
+	if (options.external_weights)
+		dst << "#include <stdio.h>" << std::endl;
 	dst << std::endl;
 
 	dst << "#define MAX(X,Y) ( X > Y ? X : Y)" << std::endl;
